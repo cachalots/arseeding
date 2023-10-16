@@ -583,22 +583,28 @@ func (s *Arseeding) refundReceipt() {
 }
 
 func (s *Arseeding) onChainBundleItems() {
+	start := time.Now()
 	ords, err := s.wdb.GetNeedOnChainOrders()
 	if err != nil {
 		log.Error("s.wdb.GetNeedOnChainOrders()", "err", err)
 		return
 	}
+	log.Info(fmt.Sprintf("GetNeedOnChainOrders: %d items, %dms", len(ords), time.Until(start).Milliseconds()))
 	if len(ords) == 0 {
 		return
 	}
 	// send arTx to arweave
+	start = time.Now()
 	arTx, onChainItemIds, err := s.onChainOrds(ords)
 	if err != nil {
 		log.Error("s.onChainOrds()", "err", err)
 		return
 	}
+	log.Info(fmt.Sprintf("onChainOrds: %d items, %dms", len(onChainItemIds), time.Until(start).Milliseconds()))
 
+	start = time.Now()
 	s.updateOnChainInfo(onChainItemIds, arTx, schema.PendingOnChain)
+	log.Info(fmt.Sprintf("updateOnChainInfo: %d items, %dms", len(onChainItemIds), time.Until(start).Milliseconds()))
 
 }
 
@@ -790,11 +796,14 @@ func (s *Arseeding) onChainBundleTx(itemIds []string) (arTx types.Transaction, o
 			}
 		}()
 
+		start := time.Now()
 		onChainItems, err = s.getOnChainBundleStream(itemIds)
 		if err != nil {
 			log.Error("s.getOnChainBundleStream(itemIds)", "err", err)
 			return
 		}
+		log.Info(fmt.Sprintf("getOnChainBundleStream: %d items, %dms", len(itemIds), time.Until(start).Milliseconds()))
+
 		// assemble and send to arweave
 		bundle, err = utils.NewBundleStream(onChainItems...)
 		if err != nil {
@@ -844,7 +853,9 @@ func (s *Arseeding) onChainBundleTx(itemIds []string) (arTx types.Transaction, o
 		log.Debug("use binary submit bundle arTx", "binary length:", len(bundle.BundleBinary))
 		price := calculatePrice(s.cache.GetFee(), int64(len(bundle.BundleBinary)))
 		speedFactor := calculateFactor(price, s.config.GetSpeedFee())
+		start := time.Now()
 		arTx, err = s.bundler.SendBundleTxSpeedUp(context.TODO(), concurrentNum, bundle.BundleBinary, arTxtags, speedFactor)
+		log.Info(fmt.Sprintf("SendBundleTxSpeedUp, concurrentNum %d,  %d items, %dms", concurrentNum, len(onChainItems), time.Until(start).Milliseconds()))
 	} else {
 		fileInfo, err1 := bundle.BundleDataReader.Stat()
 		if err1 != nil {
@@ -857,7 +868,10 @@ func (s *Arseeding) onChainBundleTx(itemIds []string) (arTx types.Transaction, o
 		}
 		price := calculatePrice(s.cache.GetFee(), fileInfo.Size())
 		speedFactor := calculateFactor(price, s.config.GetSpeedFee())
+		start := time.Now()
 		arTx, err = s.bundler.SendBundleTxSpeedUp(context.TODO(), concurrentNum, bundle.BundleDataReader, arTxtags, speedFactor)
+		log.Info(fmt.Sprintf("SendBundleTxSpeedUp, concurrentNum: %d, %d items, %dms", concurrentNum, len(onChainItems), time.Until(start).Milliseconds()))
+
 	}
 	if err != nil {
 		log.Error("s.bundler.SendBundleTxSpeedUp(bundle.BundleBinary,arTxtags)", "err", err)
@@ -866,9 +880,12 @@ func (s *Arseeding) onChainBundleTx(itemIds []string) (arTx types.Transaction, o
 	log.Info("Send bundle arTx", "arTx", arTx.ID)
 
 	// arseeding broadcast tx data
+	start := time.Now()
 	if err := s.arseedCli.SubmitTxConcurrent(context.TODO(), concurrentNum, arTx); err != nil {
 		log.Error("s.arseedCli.SubmitTxConcurrent(arTx)", "err", err, "arId", arTx.ID)
 	}
+	log.Info(fmt.Sprintf("broadcast, SendBundleTxSpeedUp: concurrentNum: %d, %d items, %dms", concurrentNum, len(onChainItems), time.Until(start).Milliseconds()))
+
 	return
 }
 
