@@ -57,7 +57,7 @@ func (s *Arseeding) runJobs(bundleInterval int) {
 
 	s.scheduler.Every(bundleInterval).Seconds().SingletonMode().Do(s.onChainBundleItems) // can set a longer time, if the items are less. such as 2m
 	// onChainBundleItems by upload order
-	s.scheduler.Every(bundleInterval).Seconds().SingletonMode().Do(s.onChainItemsBySeq)
+	//s.scheduler.Every(bundleInterval).Seconds().SingletonMode().Do(s.onChainItemsBySeq)
 	s.scheduler.Every(3).Minute().SingletonMode().Do(s.watchArTx)
 	s.scheduler.Every(2).Minute().SingletonMode().Do(s.retryOnChainArTx)
 
@@ -71,11 +71,10 @@ func (s *Arseeding) runJobs(bundleInterval int) {
 	// delete tmp file, one may be repeat request same data,tmp file can be reserve with short time
 	s.scheduler.Every(2).Minute().SingletonMode().Do(s.deleteTmpFile)
 
-	//statistic
-	s.scheduler.Every(1).Minute().SingletonMode().Do(s.UpdateRealTime)
-	go s.ProduceDailyStatistic()
-	s.scheduler.Every(1).Day().At("00:01").SingletonMode().Do(s.ProduceDailyStatistic)
-
+	////statistic
+	//s.scheduler.Every(1).Minute().SingletonMode().Do(s.UpdateRealTime)
+	//go s.ProduceDailyStatistic()
+	//s.scheduler.Every(1).Day().At("00:01").SingletonMode().Do(s.ProduceDailyStatistic)
 	// kafka
 	if len(s.KWriters) > 0 {
 		s.scheduler.Every(10).Seconds().SingletonMode().Do(s.broadcastItemToKafka)
@@ -631,20 +630,20 @@ func (s *Arseeding) onChainItemsBySeq() {
 func (s *Arseeding) onChainOrds(ords []schema.Order) (arTx types.Transaction, onChainItemIds []string, err error) {
 	// once total size limit 2 GB
 	itemIds := make([]string, 0, len(ords))
-	totalSize := int64(0)
+	//totalSize := int64(0)
 	for _, ord := range ords {
-		if totalSize+ord.Size > schema.MaxPerOnChainSize {
-			continue
-		}
-		od, exist := s.wdb.ExistProcessedOrderItem(ord.ItemId)
-		if exist {
-			if err = s.wdb.UpdateOrdOnChainStatus(od.ItemId, od.OnChainStatus, nil); err != nil {
-				log.Error("s.wdb.UpdateOrdOnChainStatus(od.ItemId,od.OnChainStatus)", "err", err, "itemId", od.ItemId)
-			}
-			continue
-		}
+		//if totalSize+ord.Size > schema.MaxPerOnChainSize {
+		//	continue
+		//}
+		//od, exist := s.wdb.ExistProcessedOrderItem(ord.ItemId)
+		//if exist {
+		//	if err = s.wdb.UpdateOrdOnChainStatus(od.ItemId, od.OnChainStatus, nil); err != nil {
+		//		log.Error("s.wdb.UpdateOrdOnChainStatus(od.ItemId,od.OnChainStatus)", "err", err, "itemId", od.ItemId)
+		//	}
+		//	continue
+		//}
 		itemIds = append(itemIds, ord.ItemId)
-		totalSize += od.Size
+		//totalSize += od.Size
 	}
 
 	// send arTx to arweave

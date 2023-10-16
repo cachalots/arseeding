@@ -44,10 +44,10 @@ func NewS3DB(accKey, secretKey, region, bktPrefix, endpoint string) (*S3DB, erro
 		}
 	}
 	s3Api := s3.New(mySession, cfgs)
-	err := createS3Bucket(s3Api, bktPrefix)
-	if err != nil {
-		return nil, err
-	}
+	//err := createS3Bucket(s3Api, bktPrefix)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	log.Info("run with s3 success")
 	return &S3DB{

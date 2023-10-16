@@ -46,12 +46,12 @@ func (s *Arseeding) ProcessSubmitItem(item types.BundleItem, currency string, is
 		Sort:          isSort,
 	}
 	// calc fee
-	respFee, err := s.CalcItemFee(currency, order.Size)
-	if err != nil {
-		return schema.Order{}, err
-	}
-	order.Decimals = respFee.Decimals
-	order.Fee = respFee.FinalFee
+	//respFee, err := s.CalcItemFee(currency, order.Size)
+	//if err != nil {
+	//	return schema.Order{}, err
+	//}
+	//order.Decimals = respFee.Decimals
+	//order.Fee = respFee.FinalFee
 	order.Currency = strings.ToUpper(currency)
 
 	if isNoFeeMode {
